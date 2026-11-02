@@ -9,7 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface ReservationRepository extends ListCrudRepository<ReservationEntity, UUID> {
-
-    // Derived Query ueber die Relation: SELECT ... WHERE user_id = ?
     List<ReservationEntity> findByUserId(UUID userId);
 }

@@ -8,7 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface UserRepository extends ListCrudRepository<UserEntity, UUID> {
-
-    // Derived Query: SELECT ... WHERE email = ?
     boolean existsByEmail(String email);
 }

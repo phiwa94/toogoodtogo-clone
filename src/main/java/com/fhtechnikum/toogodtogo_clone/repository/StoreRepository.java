@@ -9,7 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface StoreRepository extends ListCrudRepository<StoreEntity, UUID> {
-
-    // Derived Query: SELECT ... WHERE city = ?  (fuer GET /stores?city=Wien)
     List<StoreEntity> findByCity(String city);
 }

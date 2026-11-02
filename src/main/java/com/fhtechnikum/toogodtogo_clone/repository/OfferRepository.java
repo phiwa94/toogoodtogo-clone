@@ -9,7 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface OfferRepository extends ListCrudRepository<OfferEntity, UUID> {
-
-    // Derived Query ueber die Relation: SELECT ... WHERE store_id = ?
     List<OfferEntity> findByStoreId(UUID storeId);
 }
