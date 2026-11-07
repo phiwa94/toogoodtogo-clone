@@ -8,9 +8,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Ein User reserviert eine bestimmte Anzahl Sackerl eines Angebots.
- */
+// a user reserves a number of bags of an offer
 @Entity
 @Getter
 @Setter
@@ -31,7 +29,7 @@ public class ReservationEntity {
 
     private LocalDateTime createdAt;
 
-    // Enum als Text speichern ("RESERVED") statt als Zahl
+    // not in course material: save the enum as text (RESERVED) instead of a number (0), easier to read in the db
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
 

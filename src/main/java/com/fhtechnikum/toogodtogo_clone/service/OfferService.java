@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -21,20 +23,26 @@ public class OfferService {
     private final StoreService storeService;
 
     public List<OfferDto> findAll() {
-        return offerRepository.findAll().stream()
-                .map(this::toDto)
-                .toList();
+        List<OfferDto> result = new ArrayList<>();
+        for (OfferEntity entity : offerRepository.findAll()) {
+            result.add(toDto(entity));
+        }
+        return result;
     }
 
     public List<OfferDto> findByStore(UUID storeId) {
-        storeService.getStoreEntity(storeId); // 404, falls Store nicht existiert
-        return offerRepository.findByStoreId(storeId).stream()
-                .map(this::toDto)
-                .toList();
+        StoreEntity store = storeService.getStoreEntity(storeId); // 404 if the store does not exist
+
+        List<OfferDto> result = new ArrayList<>();
+        for (OfferEntity entity : offerRepository.findByStoreId(store.getId())) {
+            result.add(toDto(entity));
+        }
+        return result;
     }
 
     public OfferDto findById(UUID id) {
-        return toDto(getOfferEntity(id));
+        OfferEntity offer = getOfferEntity(id);
+        return toDto(offer);
     }
 
     public OfferDto create(OfferCreationDto dto) {
@@ -42,12 +50,14 @@ public class OfferService {
         StoreEntity store = storeService.getStoreEntity(dto.storeId());
         OfferEntity offer = new OfferEntity(dto.title(), dto.description(), dto.price(), dto.originalValue(),
                 dto.quantityAvailable(), dto.pickupStart(), dto.pickupEnd(), store);
-        return toDto(offerRepository.save(offer));
+        OfferEntity saved = offerRepository.save(offer);
+        return toDto(saved);
     }
 
     public OfferDto update(UUID id, OfferCreationDto dto) {
         validatePickupWindow(dto);
         OfferEntity offer = getOfferEntity(id);
+        StoreEntity store = storeService.getStoreEntity(dto.storeId());
         offer.setTitle(dto.title());
         offer.setDescription(dto.description());
         offer.setPrice(dto.price());
@@ -55,27 +65,33 @@ public class OfferService {
         offer.setQuantityAvailable(dto.quantityAvailable());
         offer.setPickupStart(dto.pickupStart());
         offer.setPickupEnd(dto.pickupEnd());
-        offer.setStore(storeService.getStoreEntity(dto.storeId()));
-        return toDto(offerRepository.save(offer));
+        offer.setStore(store);
+        OfferEntity saved = offerRepository.save(offer);
+        return toDto(saved);
     }
 
     public void delete(UUID id) {
-        getOfferEntity(id); // wirft 404, falls nicht vorhanden
-        offerRepository.deleteById(id);
+        OfferEntity offer = getOfferEntity(id);
+        offerRepository.delete(offer);
     }
 
-    // Wird auch vom ReservationService verwendet
+    // also used by ReservationService
+    // not in course material: ResponseStatusException
+    // without it spring would return 500 (server error) instead of 404 (not found) for an unknown id
     public OfferEntity getOfferEntity(UUID id) {
-        return offerRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Offer not found"));
+        Optional<OfferEntity> offer = offerRepository.findById(id);
+        if (offer.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Offer not found");
+        }
+        return offer.get();
     }
 
-    // Regeln, die mehrere Felder betreffen, koennen nicht mit einer einzelnen Annotation geprueft werden
+    // rules that use more than one field can not be checked with a single annotation
     private void validatePickupWindow(OfferCreationDto dto) {
         if (!dto.pickupEnd().isAfter(dto.pickupStart())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "pickupEnd must be after pickupStart");
         }
-        if (dto.price().compareTo(dto.originalValue()) > 0) {
+        if (dto.price() > dto.originalValue()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "price must not be higher than originalValue");
         }
     }

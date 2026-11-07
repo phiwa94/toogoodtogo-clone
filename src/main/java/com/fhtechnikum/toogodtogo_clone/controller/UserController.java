@@ -32,7 +32,7 @@ public class UserController {
         return userService.findById(id);
     }
 
-    // Sub-Resource: alle Reservierungen eines Users
+    // sub resource: all reservations of a user
     @GetMapping("/{id}/reservations")
     public List<ReservationDto> readReservations(@PathVariable UUID id) {
         return reservationService.findByUser(id);

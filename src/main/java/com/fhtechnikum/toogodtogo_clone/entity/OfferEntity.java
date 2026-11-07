@@ -5,15 +5,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Ein Angebot ("Ueberraschungssackerl") eines Stores.
- */
+// an offer (surprise bag) of a store
 @Entity
 @Getter
 @Setter
@@ -28,28 +25,30 @@ public class OfferEntity {
 
     private String description;
 
-    // Preis, den der Kunde zahlt
-    private BigDecimal price;
+    // price the customer pays
+    private double price;
 
-    // Urspruenglicher Warenwert (zum Anzeigen der Ersparnis)
-    private BigDecimal originalValue;
+    // original value of the food (to show the savings)
+    private double originalValue;
 
-    // Wie viele Sackerl noch verfuegbar sind
+    // how many bags are still available
     private int quantityAvailable;
 
     private LocalDateTime pickupStart;
 
     private LocalDateTime pickupEnd;
 
-    // Viele Angebote gehoeren zu einem Store (Fremdschluessel store_id)
+    // many offers belong to one store (foreign key store_id)
     @ManyToOne
     private StoreEntity store;
 
-    // Wird ein Angebot geloescht, werden seine Reservierungen mitgeloescht.
+    // when an offer is deleted, its reservations are deleted too
+    // not in course material: mappedBy tells hibernate that the foreign key is on the @ManyToOne side
+    // without it hibernate would create an extra join table
     @OneToMany(mappedBy = "offer", cascade = CascadeType.REMOVE)
     private List<ReservationEntity> reservations = new ArrayList<>();
 
-    public OfferEntity(String title, String description, BigDecimal price, BigDecimal originalValue,
+    public OfferEntity(String title, String description, double price, double originalValue,
                        int quantityAvailable, LocalDateTime pickupStart, LocalDateTime pickupEnd,
                        StoreEntity store) {
         this.title = title;

@@ -29,7 +29,9 @@ public class StoreEntity {
 
     private String city;
 
-    // Ein Store hat viele Angebote. Wird der Store geloescht, werden seine Angebote mitgeloescht.
+    // a store has many offers, when the store is deleted its offers are deleted too
+    // not in course material: mappedBy tells hibernate that the foreign key is on the @ManyToOne side
+    // without it hibernate would create an extra join table
     @OneToMany(mappedBy = "store", cascade = CascadeType.REMOVE)
     private List<OfferEntity> offers = new ArrayList<>();
 

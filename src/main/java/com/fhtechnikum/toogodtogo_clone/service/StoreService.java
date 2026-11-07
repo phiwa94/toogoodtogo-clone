@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -18,23 +20,31 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
 
-    // city ist optional: null -> alle Stores, sonst nach Stadt gefiltert
+    // city is optional: null means all stores, otherwise filter by city
     public List<StoreDto> findAll(String city) {
-        List<StoreEntity> stores = (city == null)
-                ? storeRepository.findAll()
-                : storeRepository.findByCity(city);
-        return stores.stream()
-                .map(this::toDto)
-                .toList();
+        List<StoreEntity> stores;
+        if (city == null) {
+            stores = storeRepository.findAll();
+        } else {
+            stores = storeRepository.findByCity(city);
+        }
+
+        List<StoreDto> result = new ArrayList<>();
+        for (StoreEntity entity : stores) {
+            result.add(toDto(entity));
+        }
+        return result;
     }
 
     public StoreDto findById(UUID id) {
-        return toDto(getStoreEntity(id));
+        StoreEntity store = getStoreEntity(id);
+        return toDto(store);
     }
 
     public StoreDto create(StoreCreationDto dto) {
         StoreEntity store = new StoreEntity(dto.name(), dto.description(), dto.street(), dto.postalCode(), dto.city());
-        return toDto(storeRepository.save(store));
+        StoreEntity saved = storeRepository.save(store);
+        return toDto(saved);
     }
 
     public StoreDto update(UUID id, StoreCreationDto dto) {
@@ -44,18 +54,24 @@ public class StoreService {
         store.setStreet(dto.street());
         store.setPostalCode(dto.postalCode());
         store.setCity(dto.city());
-        return toDto(storeRepository.save(store));
+        StoreEntity saved = storeRepository.save(store);
+        return toDto(saved);
     }
 
     public void delete(UUID id) {
-        getStoreEntity(id); // wirft 404, falls nicht vorhanden
-        storeRepository.deleteById(id);
+        StoreEntity store = getStoreEntity(id);
+        storeRepository.delete(store);
     }
 
-    // Wird auch vom OfferService verwendet
+    // also used by OfferService
+    // not in course material: ResponseStatusException
+    // without it spring would return 500 (server error) instead of 404 (not found) for an unknown id
     public StoreEntity getStoreEntity(UUID id) {
-        return storeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Store not found"));
+        Optional<StoreEntity> store = storeRepository.findById(id);
+        if (store.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Store not found");
+        }
+        return store.get();
     }
 
     private StoreDto toDto(StoreEntity entity) {

@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -19,13 +21,16 @@ public class UserService {
     private final UserRepository userRepository;
 
     public List<UserDto> findAll() {
-        return userRepository.findAll().stream()
-                .map(this::toDto)
-                .toList();
+        List<UserDto> result = new ArrayList<>();
+        for (UserEntity entity : userRepository.findAll()) {
+            result.add(toDto(entity));
+        }
+        return result;
     }
 
     public UserDto findById(UUID id) {
-        return toDto(getUserEntity(id));
+        UserEntity user = getUserEntity(id);
+        return toDto(user);
     }
 
     public UserDto create(UserCreationDto dto) {
@@ -38,24 +43,34 @@ public class UserService {
 
     public UserDto update(UUID id, UserCreationDto dto) {
         UserEntity user = getUserEntity(id);
-        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+
+        // only check if the email has changed (users e-mail is ofc taken already)
+        if (!user.getEmail().equals(dto.email())) {
+            if (userRepository.existsByEmail(dto.email())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+            }
         }
+
         user.setFirstName(dto.firstName());
         user.setLastName(dto.lastName());
         user.setEmail(dto.email());
-        return toDto(userRepository.save(user));
+        UserEntity saved = userRepository.save(user);
+        return toDto(saved);
     }
 
     public void delete(UUID id) {
-        getUserEntity(id); // wirft 404, falls nicht vorhanden
-        userRepository.deleteById(id);
+        UserEntity user = getUserEntity(id);
+        userRepository.delete(user);
     }
 
-    // Wird auch vom ReservationService verwendet
+    // also used by ReservationService
+    // without it spring would return 500 (server error) instead of 404 (not found) for an unknown id
     public UserEntity getUserEntity(UUID id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        Optional<UserEntity> user = userRepository.findById(id);
+        if (user.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        return user.get();
     }
 
     private UserDto toDto(UserEntity entity) {

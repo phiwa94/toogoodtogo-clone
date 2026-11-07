@@ -26,7 +26,9 @@ public class UserEntity {
     @Column(unique = true)
     private String email;
 
-    // Ein User hat viele Reservierungen. Wird der User geloescht, werden seine Reservierungen mitgeloescht.
+    // a user has many reservations, when the user is deleted their reservations are deleted too
+    // not in course material: mappedBy tells hibernate that the foreign key is on the @ManyToOne side
+    // without it hibernate would create an extra join table
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<ReservationEntity> reservations = new ArrayList<>();
 

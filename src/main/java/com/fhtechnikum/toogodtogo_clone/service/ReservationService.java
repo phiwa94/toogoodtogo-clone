@@ -15,7 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -29,34 +31,41 @@ public class ReservationService {
     private final OfferService offerService;
 
     public List<ReservationDto> findAll() {
-        return reservationRepository.findAll().stream()
-                .map(this::toDto)
-                .toList();
+        List<ReservationDto> result = new ArrayList<>();
+        for (ReservationEntity entity : reservationRepository.findAll()) {
+            result.add(toDto(entity));
+        }
+        return result;
     }
 
     public List<ReservationDto> findByUser(UUID userId) {
-        userService.getUserEntity(userId); // 404, falls User nicht existiert
-        return reservationRepository.findByUserId(userId).stream()
-                .map(this::toDto)
-                .toList();
+        UserEntity user = userService.getUserEntity(userId); // 404 if the user does not exist
+
+        List<ReservationDto> result = new ArrayList<>();
+        for (ReservationEntity entity : reservationRepository.findByUserId(user.getId())) {
+            result.add(toDto(entity));
+        }
+        return result;
     }
 
     public ReservationDto findById(UUID id) {
-        return toDto(getReservationEntity(id));
+        ReservationEntity reservation = getReservationEntity(id);
+        return toDto(reservation);
     }
 
     public ReservationDto create(ReservationCreationDto dto) {
         UserEntity user = userService.getUserEntity(dto.userId());
         OfferEntity offer = offerService.getOfferEntity(dto.offerId());
 
-        // Business-Regel: es koennen nicht mehr Sackerl reserviert werden als verfuegbar sind
+        // business rule: you can not reserve more bags than are available
         if (offer.getQuantityAvailable() < dto.quantity()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Not enough bags available");
         }
         offer.setQuantityAvailable(offer.getQuantityAvailable() - dto.quantity());
         offerRepository.save(offer);
 
-        ReservationEntity saved = reservationRepository.save(new ReservationEntity(user, offer, dto.quantity()));
+        ReservationEntity reservation = new ReservationEntity(user, offer, dto.quantity());
+        ReservationEntity saved = reservationRepository.save(reservation);
         log.info("Reservation {} created for offer {} by user {}", saved.getId(), offer.getId(), user.getId());
         return toDto(saved);
     }
@@ -64,7 +73,7 @@ public class ReservationService {
     public ReservationDto updateStatus(UUID id, ReservationUpdateDto dto) {
         ReservationEntity reservation = getReservationEntity(id);
 
-        // Nur offene Reservierungen duerfen geaendert werden
+        // only open reservations can be changed
         if (reservation.getStatus() != ReservationStatus.RESERVED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Reservation is already " + reservation.getStatus());
         }
@@ -72,7 +81,8 @@ public class ReservationService {
             returnBagsToOffer(reservation);
         }
         reservation.setStatus(dto.status());
-        return toDto(reservationRepository.save(reservation));
+        ReservationEntity saved = reservationRepository.save(reservation);
+        return toDto(saved);
     }
 
     public void delete(UUID id) {
@@ -80,7 +90,7 @@ public class ReservationService {
         if (reservation.getStatus() == ReservationStatus.RESERVED) {
             returnBagsToOffer(reservation);
         }
-        reservationRepository.deleteById(id);
+        reservationRepository.delete(reservation);
     }
 
     private void returnBagsToOffer(ReservationEntity reservation) {
@@ -89,9 +99,14 @@ public class ReservationService {
         offerRepository.save(offer);
     }
 
+    // not in course material: ResponseStatusException
+    // without it spring would return 500 (server error) instead of 404 (not found) for an unknown id
     private ReservationEntity getReservationEntity(UUID id) {
-        return reservationRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+        Optional<ReservationEntity> reservation = reservationRepository.findById(id);
+        if (reservation.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found");
+        }
+        return reservation.get();
     }
 
     private ReservationDto toDto(ReservationEntity entity) {

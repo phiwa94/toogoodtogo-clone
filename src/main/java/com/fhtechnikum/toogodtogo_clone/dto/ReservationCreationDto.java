@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
-// Request-Body fuer POST /reservations
+// request body for post /reservations
 public record ReservationCreationDto(
         @NotNull UUID userId,
         @NotNull UUID offerId,

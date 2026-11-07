@@ -2,9 +2,9 @@ services:
   db:
     image: mariadb
     environment:
-      MARIADB_ROOT_PASSWORD: rootpassword
       MARIADB_DATABASE: toogoodtogo
       MARIADB_USER: user
       MARIADB_PASSWORD: password
+      MARIADB_ROOT_PASSWORD: rootpassword
     ports:
       - "3306:3306"

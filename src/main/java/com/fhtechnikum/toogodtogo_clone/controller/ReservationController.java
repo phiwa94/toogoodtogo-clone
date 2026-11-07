@@ -36,7 +36,7 @@ public class ReservationController {
         return reservationService.create(dto);
     }
 
-    // Status aendern, z. B. auf PICKED_UP oder CANCELLED
+    // change the status, for example to PICKED_UP or CANCELLED
     @PutMapping("/{id}")
     public ReservationDto update(@PathVariable UUID id, @RequestBody @Valid ReservationUpdateDto dto) {
         return reservationService.updateStatus(id, dto);

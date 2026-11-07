@@ -22,7 +22,8 @@ public class StoreController {
     private final StoreService storeService;
     private final OfferService offerService;
 
-    // GET /stores  oder  GET /stores?city=Wien  (Filtern ueber Query-Parameter)
+    // get /stores or get /stores?city=Wien (filter with a query parameter, see rest slides)
+    // not in course material: @RequestParam reads the query parameter from the url, required = false makes it optional
     @GetMapping
     public List<StoreDto> readAll(@RequestParam(required = false) String city) {
         return storeService.findAll(city);
@@ -33,7 +34,7 @@ public class StoreController {
         return storeService.findById(id);
     }
 
-    // Sub-Resource: alle Angebote eines Stores
+    // sub resource: all offers of a store
     @GetMapping("/{id}/offers")
     public List<OfferDto> readOffers(@PathVariable UUID id) {
         return offerService.findByStore(id);
