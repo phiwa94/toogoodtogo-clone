@@ -27,7 +27,7 @@ public class UserEntity {
     private String email;
 
     // a user has many reservations, when the user is deleted their reservations are deleted too
-    // not in course material: mappedBy tells hibernate that the foreign key is on the @ManyToOne side
+    //mappedBy tells hibernate that the foreign key is on the @ManyToOne side
     // without it hibernate would create an extra join table
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<ReservationEntity> reservations = new ArrayList<>();

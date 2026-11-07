@@ -29,7 +29,7 @@ public class ReservationEntity {
 
     private LocalDateTime createdAt;
 
-    // not in course material: save the enum as text (RESERVED) instead of a number (0), easier to read in the db
+    // save the enum as text (RESERVED) instead of a number (0), easier to read in the db
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
 

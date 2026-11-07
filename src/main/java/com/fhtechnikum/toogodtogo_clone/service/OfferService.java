@@ -76,7 +76,7 @@ public class OfferService {
     }
 
     // also used by ReservationService
-    // not in course material: ResponseStatusException
+    //ResponseStatusException
     // without it spring would return 500 (server error) instead of 404 (not found) for an unknown id
     public OfferEntity getOfferEntity(UUID id) {
         Optional<OfferEntity> offer = offerRepository.findById(id);

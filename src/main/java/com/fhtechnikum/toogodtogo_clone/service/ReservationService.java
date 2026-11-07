@@ -57,7 +57,7 @@ public class ReservationService {
         UserEntity user = userService.getUserEntity(dto.userId());
         OfferEntity offer = offerService.getOfferEntity(dto.offerId());
 
-        // business rule: you can not reserve more bags than are available
+        //you can not reserve more bags than are available
         if (offer.getQuantityAvailable() < dto.quantity()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Not enough bags available");
         }
@@ -99,7 +99,7 @@ public class ReservationService {
         offerRepository.save(offer);
     }
 
-    // not in course material: ResponseStatusException
+    //ResponseStatusException
     // without it spring would return 500 (server error) instead of 404 (not found) for an unknown id
     private ReservationEntity getReservationEntity(UUID id) {
         Optional<ReservationEntity> reservation = reservationRepository.findById(id);

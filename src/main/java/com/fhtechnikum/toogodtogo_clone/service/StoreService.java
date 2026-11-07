@@ -64,7 +64,7 @@ public class StoreService {
     }
 
     // also used by OfferService
-    // not in course material: ResponseStatusException
+    //responseStatusException
     // without it spring would return 500 (server error) instead of 404 (not found) for an unknown id
     public StoreEntity getStoreEntity(UUID id) {
         Optional<StoreEntity> store = storeRepository.findById(id);
