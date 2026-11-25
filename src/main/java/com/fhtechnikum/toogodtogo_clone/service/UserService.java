@@ -2,11 +2,15 @@ package com.fhtechnikum.toogodtogo_clone.service;
 
 import com.fhtechnikum.toogodtogo_clone.dto.UserCreationDto;
 import com.fhtechnikum.toogodtogo_clone.dto.UserDto;
+import com.fhtechnikum.toogodtogo_clone.entity.OfferEntity;
+import com.fhtechnikum.toogodtogo_clone.entity.ReservationEntity;
+import com.fhtechnikum.toogodtogo_clone.entity.ReservationStatus;
 import com.fhtechnikum.toogodtogo_clone.entity.UserEntity;
 import com.fhtechnikum.toogodtogo_clone.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
@@ -58,8 +62,21 @@ public class UserService {
         return toDto(saved);
     }
 
+    // Transactional: returning the bags and deleting the user succeed or fail together
+    @Transactional
     public void delete(UUID id) {
         UserEntity user = getUserEntity(id);
+
+        // only open reservations still hold bags
+        for (ReservationEntity reservation : user.getReservations()) {
+            if (reservation.getStatus() == ReservationStatus.RESERVED) {
+                OfferEntity offer = reservation.getOffer();
+                // no save() needed, Hibernate writes changes of managed entities on commit
+                offer.setQuantityAvailable(offer.getQuantityAvailable() + reservation.getQuantity());
+            }
+        }
+
+        // cascade removes the user's reservations as well
         userRepository.delete(user);
     }
 
